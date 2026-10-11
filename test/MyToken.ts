@@ -14,6 +14,7 @@ describe("mytoken deploy", () => {
       18,
     ]);
   });
+
   it("should return name", async () => {
     expect(await myTokenC.name()).equal("MyToken");
   });
@@ -24,10 +25,11 @@ describe("mytoken deploy", () => {
     expect(await myTokenC.decimals()).equal(18);
   });
   it("should return 0 totalSupply", async () => {
-    expect(await myTokenC.totalSupply()).equal(0);
+    expect(await myTokenC.totalSupply()).equal(1n * 10n ** 18n);
   });
-  it("should return 0 balance for signer 0", async () => {
+  //1MT = 1*10^18
+  it("should return 1MT balance for signer 0", async () => {
     const signer0 = signers[0];
-    expect(await myTokenC.balance0f(signer0)).equal(0);
+    expect(await myTokenC.balance0f(signer0)).equal(1n * 10n ** 18n);
   });
 });
