@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-contract MyToken {
+import "./ManagedAccess.sol";
+
+contract MyToken is ManagedAccess {
     event Transfer(address indexed from, address indexed to, uint256 value);
     event Approval(address indexed spender, uint256 amount);
 
@@ -18,7 +20,7 @@ contract MyToken {
         string memory _symbol,
         uint8 _decimal,
         uint256 _amount
-    ) {
+    ) ManagedAccess(msg.sender, msg.sender) {
         name = _name;
         symbol = _symbol;
         decimals = _decimal;
@@ -30,6 +32,11 @@ contract MyToken {
         emit Approval(spender, amount);
     }
 
+    function transferOwnership(address newOwner) external {
+        require(newOwner != address(0), "Invalid owner");
+        owner = newOwner;
+    }
+
     function transferFrom(address from, address to, uint256 amount) external {
         address spender = msg.sender;
         require(allowance[from][spender] >= amount, "insufficient allowance");
@@ -39,16 +46,20 @@ contract MyToken {
         emit Transfer(from, to, amount);
     }
 
-    function mint(uint256 amount, address owner) external {
-        _mint(amount, owner);
+    function mint(uint256 amount, address to) external onlyManager {
+        _mint(amount, to);
     }
 
-    function _mint(uint256 amount, address owner) internal {
+    function setManager(address _manager) external onlyOwner {
+        manager = _manager;
+    }
+
+    function _mint(uint256 amount, address to) internal {
         //totalSupply = totalSupply + amount;
         //balance0f[owner] = balance0f[owner] + amount;
         totalSupply += amount;
-        balance0f[owner] += amount;
-        emit Transfer(address(0), owner, amount);
+        balance0f[to] += amount;
+        emit Transfer(address(0), to, amount);
     }
 
     function transfer(uint256 amount, address to) external {
