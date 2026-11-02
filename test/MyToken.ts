@@ -2,9 +2,7 @@ import hre from "hardhat";
 import { expect } from "chai";
 import { MyToken } from "../typechain-types";
 import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
-
-const MINTING_AMOUNT = 100n;
-const DECIMALS = 18n;
+import { DECIMALS, MINTING_AMOUNT } from "./constant";
 
 describe("My Token", () => {
   let myTokenC: MyToken;
@@ -26,7 +24,7 @@ describe("My Token", () => {
       expect(await myTokenC.symbol()).equal("MT");
     });
     it("should return DECIMALS", async () => {
-      expect(await myTokenC.DECIMALS()).equal(18);
+      expect(await myTokenC.decimals()).equal(DECIMALS);
     });
     it("should return 100 totalSupply", async () => {
       expect(await myTokenC.totalSupply()).equal(
