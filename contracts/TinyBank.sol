@@ -18,14 +18,62 @@ contract TinyBank is ManagedAccess {
     mapping(address => uint256) public lastClaimedBlock;
 
     uint256 defaultRewardPerBlock = 1 * 10 ** 18;
-    uint256 rewardPerBlock;
+    uint256 public rewardPerBlock;
 
     mapping(address => uint256) public staked;
     uint256 public totalStaked;
+    mapping(address => bool) public isManager;
+    address[] public managers;
+    mapping(bytes32 => mapping(address => bool)) public confirmations;
 
     constructor(IMyToken _stakingToken) ManagedAccess(msg.sender, msg.sender) {
         stakingToken = _stakingToken;
         rewardPerBlock = defaultRewardPerBlock;
+    }
+
+    function registerManagers(address[] calldata _managers) external onlyOwner {
+        require(managers.length == 0, "Managers already registered");
+        require(_managers.length >= 3, "At least 3 managers required");
+
+        for (uint256 i = 0; i < _managers.length; i++) {
+            address account = _managers[i];
+
+            require(account != address(0), "Invalid manager");
+            require(!isManager[account], "Duplicate manager");
+
+            isManager[account] = true;
+            managers.push(account);
+        }
+    }
+
+    function confirmRewardPerBlock(uint256 _amount) external {
+        require(isManager[msg.sender], "You are not a manager");
+
+        bytes32 requestId = keccak256(
+            abi.encodeWithSelector(this.setRewardPerBlock.selector, _amount)
+        );
+
+        confirmations[requestId][msg.sender] = true;
+    }
+
+    modifier onlyAllConfirmed() {
+        require(isManager[msg.sender], "You are not a manager");
+        require(managers.length >= 3, "Not all confirmed yet");
+
+        bytes32 requestId = keccak256(msg.data);
+
+        for (uint256 i = 0; i < managers.length; i++) {
+            require(
+                confirmations[requestId][managers[i]],
+                "Not all confirmed yet"
+            );
+        }
+
+        for (uint256 i = 0; i < managers.length; i++) {
+            delete confirmations[requestId][managers[i]];
+        }
+
+        _;
     }
 
     modifier updateReward(address to) {
@@ -39,7 +87,7 @@ contract TinyBank is ManagedAccess {
         _; //caller's code
     }
 
-    function setRewardPerBlock(uint256 _amount) external onlyManager {
+    function setRewardPerBlock(uint256 _amount) external onlyAllConfirmed {
         rewardPerBlock = _amount;
     }
 
