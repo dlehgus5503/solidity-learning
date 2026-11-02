@@ -1,6 +1,6 @@
 import hre from "hardhat";
 import { expect } from "chai";
-import { MyToken } from "../typechain-types";
+import { IMyToken__factory, MyToken } from "../typechain-types";
 import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
 import { DECIMALS, MINTING_AMOUNT } from "./constant";
 
@@ -40,6 +40,14 @@ describe("My Token", () => {
       expect(await myTokenC.balance0f(signer0)).equal(
         MINTING_AMOUNT * 10n ** DECIMALS,
       );
+    });
+
+    it("should return or revert when minting infinitly", async () => {
+      const hacker = signers[2];
+      const mintingAgainAmount = hre.ethers.parseUnits("10000", DECIMALS);
+      await expect(
+        myTokenC.connect(hacker).mint(mintingAgainAmount, hacker.address),
+      ).to.be.revertedWith("You are not authorized this token");
     });
   });
 
